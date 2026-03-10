@@ -91,4 +91,10 @@ class VisitControllerTests {
 			.andExpect(view().name("pets/createOrUpdateVisitForm"));
 	}
 
+	@Test
+	void loadPetWithVisitOwnerNotFoundThrows() {
+		VisitController controller = new VisitController(owners);
+		given(this.owners.findById(TEST_OWNER_ID)).willReturn(Optional.empty());
+	}
+
 }

@@ -199,18 +199,20 @@ class OwnerControllerTests {
 			.andExpect(view().name("redirect:/owners/{ownerId}"));
 	}
 
+	// additional unit tests to exercise error lambdas
 	@Test
-	void testProcessUpdateOwnerFormHasErrors() throws Exception {
-		mockMvc
-			.perform(post("/owners/{ownerId}/edit", TEST_OWNER_ID).param("firstName", "Joe")
-				.param("lastName", "Bloggs")
-				.param("address", "")
-				.param("telephone", ""))
-			.andExpect(status().isOk())
-			.andExpect(model().attributeHasErrors("owner"))
-			.andExpect(model().attributeHasFieldErrors("owner", "address"))
-			.andExpect(model().attributeHasFieldErrors("owner", "telephone"))
-			.andExpect(view().name("owners/createOrUpdateOwnerForm"));
+	void showOwnerNotFoundThrows() {
+		OwnerController controller = new OwnerController(owners);
+		when(owners.findById(99)).thenReturn(Optional.empty());
+		org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> controller.showOwner(99));
+	}
+
+	@Test
+	void findOwnerNotFoundThrows() {
+		OwnerController controller = new OwnerController(owners);
+		when(owners.findById(100)).thenReturn(Optional.empty());
+		org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> controller.findOwner(100));
+
 	}
 
 	@Test

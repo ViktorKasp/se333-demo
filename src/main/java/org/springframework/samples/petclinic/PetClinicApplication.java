@@ -29,8 +29,16 @@ import org.springframework.context.annotation.ImportRuntimeHints;
 @ImportRuntimeHints(PetClinicRuntimeHints.class)
 public class PetClinicApplication {
 
+	// stored context to support testing of main()
+	private static org.springframework.context.ConfigurableApplicationContext context;
+
 	public static void main(String[] args) {
-		SpringApplication.run(PetClinicApplication.class, args);
+		context = SpringApplication.run(PetClinicApplication.class, args);
+	}
+
+	// visible for tests
+	static org.springframework.context.ConfigurableApplicationContext getContext() {
+		return context;
 	}
 
 }
