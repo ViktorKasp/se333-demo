@@ -195,6 +195,21 @@ class PetControllerTests {
 		}
 
 		@Test
+		void testProcessUpdateFormWithFutureBirthDate() throws Exception {
+			LocalDate currentDate = LocalDate.now();
+			String futureBirthDate = currentDate.plusMonths(1).toString();
+
+			mockMvc
+				.perform(post("/owners/{ownerId}/pets/{petId}/edit", TEST_OWNER_ID, TEST_PET_ID).param("name", "Betty")
+					.param("birthDate", futureBirthDate))
+				.andExpect(model().attributeHasNoErrors("owner"))
+				.andExpect(model().attributeHasErrors("pet"))
+				.andExpect(model().attributeHasFieldErrors("pet", "birthDate"))
+				.andExpect(model().attributeHasFieldErrorCode("pet", "birthDate", "typeMismatch.birthDate"))
+				.andExpect(view().name("pets/createOrUpdatePetForm"));
+		}
+
+		@Test
 		void testProcessUpdateFormWithBlankName() throws Exception {
 			mockMvc
 				.perform(post("/owners/{ownerId}/pets/{petId}/edit", TEST_OWNER_ID, TEST_PET_ID).param("name", "  ")
@@ -203,6 +218,18 @@ class PetControllerTests {
 				.andExpect(model().attributeHasErrors("pet"))
 				.andExpect(model().attributeHasFieldErrors("pet", "name"))
 				.andExpect(model().attributeHasFieldErrorCode("pet", "name", "required"))
+				.andExpect(view().name("pets/createOrUpdatePetForm"));
+		}
+
+		@Test
+		void testProcessUpdateFormWithDuplicateName() throws Exception {
+			mockMvc
+				.perform(post("/owners/{ownerId}/pets/{petId}/edit", TEST_OWNER_ID, TEST_PET_ID).param("name", "doggy")
+					.param("birthDate", "2015-02-12"))
+				.andExpect(model().attributeHasNoErrors("owner"))
+				.andExpect(model().attributeHasErrors("pet"))
+				.andExpect(model().attributeHasFieldErrors("pet", "name"))
+				.andExpect(model().attributeHasFieldErrorCode("pet", "name", "duplicate"))
 				.andExpect(view().name("pets/createOrUpdatePetForm"));
 		}
 
@@ -220,6 +247,15 @@ class PetControllerTests {
 		PetController controller = new PetController(owners, types);
 		given(owners.findById(999)).willReturn(Optional.empty());
 		org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> controller.findPet(999, 1));
+	}
+
+	@Test
+	void findPetWithValidOwnerInvalidPetReturnsNull() {
+		PetController controller = new PetController(owners, types);
+		Owner owner = new Owner();
+		given(owners.findById(TEST_OWNER_ID)).willReturn(Optional.of(owner));
+		Pet result = controller.findPet(TEST_OWNER_ID, 999);
+		org.junit.jupiter.api.Assertions.assertNull(result);
 	}
 
 }
