@@ -91,4 +91,12 @@ class VisitControllerTests {
 			.andExpect(view().name("pets/createOrUpdateVisitForm"));
 	}
 
+	@Test
+	void loadPetWithVisitOwnerNotFoundThrows() {
+		VisitController controller = new VisitController(owners);
+		given(this.owners.findById(TEST_OWNER_ID)).willReturn(Optional.empty());
+		org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+				() -> controller.loadPetWithVisit(TEST_OWNER_ID, TEST_PET_ID, new java.util.HashMap<>()));
+	}
+
 }

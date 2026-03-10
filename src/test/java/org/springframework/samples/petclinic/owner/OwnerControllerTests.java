@@ -248,4 +248,19 @@ class OwnerControllerTests {
 			.andExpect(flash().attributeExists("error"));
 	}
 
+	// additional unit tests to exercise error lambdas
+	@Test
+	void showOwnerNotFoundThrows() {
+		OwnerController controller = new OwnerController(owners);
+		when(owners.findById(99)).thenReturn(Optional.empty());
+		org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> controller.showOwner(99));
+	}
+
+	@Test
+	void findOwnerNotFoundThrows() {
+		OwnerController controller = new OwnerController(owners);
+		when(owners.findById(100)).thenReturn(Optional.empty());
+		org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> controller.findOwner(100));
+	}
+
 }
