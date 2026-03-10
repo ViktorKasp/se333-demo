@@ -208,4 +208,18 @@ class PetControllerTests {
 
 	}
 
+	@Test
+	void findOwnerNotFoundThrows() {
+		PetController controller = new PetController(owners, types);
+		given(owners.findById(999)).willReturn(Optional.empty());
+		org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> controller.findOwner(999));
+	}
+
+	@Test
+	void findPetOwnerNotFoundThrows() {
+		PetController controller = new PetController(owners, types);
+		given(owners.findById(999)).willReturn(Optional.empty());
+		org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> controller.findPet(999, 1));
+	}
+
 }

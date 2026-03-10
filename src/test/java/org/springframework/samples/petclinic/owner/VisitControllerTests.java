@@ -99,4 +99,13 @@ class VisitControllerTests {
 				() -> controller.loadPetWithVisit(TEST_OWNER_ID, TEST_PET_ID, new java.util.HashMap<>()));
 	}
 
+	@Test
+	void loadPetWithVisitPetNotFoundThrows() {
+		VisitController controller = new VisitController(owners);
+		Owner owner = new Owner();
+		given(this.owners.findById(TEST_OWNER_ID)).willReturn(Optional.of(owner));
+		org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+				() -> controller.loadPetWithVisit(TEST_OWNER_ID, 999, new java.util.HashMap<>()));
+	}
+
 }
