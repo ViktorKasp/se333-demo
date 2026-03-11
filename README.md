@@ -1,174 +1,205 @@
-# Spring PetClinic Sample Application [![Build Status](https://github.com/spring-projects/spring-petclinic/actions/workflows/maven-build.yml/badge.svg)](https://github.com/spring-projects/spring-petclinic/actions/workflows/maven-build.yml)[![Build Status](https://github.com/spring-projects/spring-petclinic/actions/workflows/gradle-build.yml/badge.svg)](https://github.com/spring-projects/spring-petclinic/actions/workflows/gradle-build.yml)
+# SE333 Final Project — AI-Powered Software Testing Agent
 
-[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/spring-projects/spring-petclinic) [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces/new?hide_repo_select=true&ref=main&repo=7517918)
+**Student:** Viktor Kasp  
+**Course:** SE333 — Software Testing  
+**Repository:** https://github.com/ViktorKasp/se333-demo  
+**Application Tested:** [Spring PetClinic](https://github.com/spring-projects/spring-petclinic)
 
-## Understanding the Spring Petclinic application with a few diagrams
+---
 
-See the presentation here:  
-[Spring Petclinic Sample Application (legacy slides)](https://speakerdeck.com/michaelisvy/spring-petclinic-sample-application?slide=20)
+## Project Overview
 
-> **Note:** These slides refer to a legacy, pre–Spring Boot version of Petclinic and may not reflect the current Spring Boot–based implementation.  
-> For up-to-date information, please refer to this repository and its documentation.
+This project implements an intelligent software testing agent using the **Model Context Protocol (MCP)**. The agent automatically generates, executes, and iterates on JUnit test cases to maximize JaCoCo code coverage on a Java Spring Boot application. It integrates with GitHub for version control automation and includes a custom Specification-Based Testing extension.
 
+**Tech Stack:**
+- Python 3.11+, FastMCP 2.x
+- Java 17, Maven 3.9, Spring Boot (PetClinic)
+- JaCoCo 0.8.14
+- VS Code with GitHub Copilot Agent mode
+- GitHub MCP Server
 
-## Run Petclinic locally
+---
 
-Spring Petclinic is a [Spring Boot](https://spring.io/guides/gs/spring-boot) application built using [Maven](https://spring.io/guides/gs/maven/) or [Gradle](https://spring.io/guides/gs/gradle/).
-Java 17 or later is required for the build, and the application can run with Java 17 or newer.
+## MCP Tool API Documentation
 
-You first need to clone the project locally:
+### Tool 1: `add`
+A basic arithmetic tool used to verify MCP server connectivity.
 
-```bash
-git clone https://github.com/spring-projects/spring-petclinic.git
-cd spring-petclinic
-```
-If you are using Maven, you can start the application on the command-line as follows:
+| Field | Details |
+|-------|---------|
+| **Input** | `a: int`, `b: int` |
+| **Output** | `int` — sum of a and b |
+| **Usage** | `add(1, 2)` → `3` |
 
-```bash
-./mvnw spring-boot:run
-```
-With Gradle, the command is as follows:
+---
 
-```bash
-./gradlew bootRun
-```
+### Tool 2: `parse_jacoco`
+Parses a JaCoCo XML coverage report and returns per-class coverage metrics.
 
-You can then access the Petclinic at <http://localhost:8080/>.
+| Field | Details |
+|-------|---------|
+| **Input** | `xml_path: str` — path to `jacoco.xml` |
+| **Output** | `dict` with list of classes, covered/missed lines, coverage %, uncovered methods |
+| **Usage** | `parse_jacoco("target/site/jacoco/jacoco.xml")` |
 
-<img width="1042" alt="petclinic-screenshot" src="https://cloud.githubusercontent.com/assets/838318/19727082/2aee6d6c-9b8e-11e6-81fe-e889a5ddfded.png">
-
-You can, of course, run Petclinic in your favorite IDE.
-See below for more details.
-
-## Building a Container
-
-There is no `Dockerfile` in this project. You can build a container image (if you have a docker daemon) using the Spring Boot build plugin:
-
-```bash
-./mvnw spring-boot:build-image
-```
-
-## In case you find a bug/suggested improvement for Spring Petclinic
-
-Our issue tracker is available [here](https://github.com/spring-projects/spring-petclinic/issues).
-
-## Database configuration
-
-In its default configuration, Petclinic uses an in-memory database (H2) which
-gets populated at startup with data. The h2 console is exposed at `http://localhost:8080/h2-console`,
-and it is possible to inspect the content of the database using the `jdbc:h2:mem:<uuid>` URL. The UUID is printed at startup to the console.
-
-A similar setup is provided for MySQL and PostgreSQL if a persistent database configuration is needed. Note that whenever the database type changes, the app needs to run with a different profile: `spring.profiles.active=mysql` for MySQL or `spring.profiles.active=postgres` for PostgreSQL. See the [Spring Boot documentation](https://docs.spring.io/spring-boot/how-to/properties-and-configuration.html#howto.properties-and-configuration.set-active-spring-profiles) for more detail on how to set the active profile.
-
-You can start MySQL or PostgreSQL locally with whatever installer works for your OS or use docker:
-
-```bash
-docker run -e MYSQL_USER=petclinic -e MYSQL_PASSWORD=petclinic -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=petclinic -p 3306:3306 mysql:9.5
+**Example Output:**
+```json
+{
+  "classes": [
+    {
+      "class": "org/springframework/samples/petclinic/owner/OwnerController",
+      "covered_lines": 45,
+      "missed_lines": 0,
+      "coverage_percent": 100.0,
+      "uncovered_methods": []
+    }
+  ]
+}
 ```
 
-or
+---
 
-```bash
-docker run -e POSTGRES_USER=petclinic -e POSTGRES_PASSWORD=petclinic -e POSTGRES_DB=petclinic -p 5432:5432 postgres:18.1
-```
+### Tool 3: `boundary_value_analysis`
+Generates boundary value test cases for a method parameter given a valid range.
 
-Further documentation is provided for [MySQL](https://github.com/spring-projects/spring-petclinic/blob/main/src/main/resources/db/mysql/petclinic_db_setup_mysql.txt)
-and [PostgreSQL](https://github.com/spring-projects/spring-petclinic/blob/main/src/main/resources/db/postgres/petclinic_db_setup_postgres.txt).
+| Field | Details |
+|-------|---------|
+| **Input** | `method_name: str`, `param_name: str`, `min_value: int`, `max_value: int`, `param_type: str` |
+| **Output** | `dict` with 5 test cases (min, max, min-1, max+1, nominal) and a JUnit template |
+| **Usage** | `boundary_value_analysis("addVisit", "petId", 1, 999, "int")` |
 
-Instead of vanilla `docker` you can also use the provided `docker-compose.yml` file to start the database containers. Each one has a service named after the Spring profile:
+**Test Cases Generated:**
+- Minimum boundary value (valid)
+- Maximum boundary value (valid)
+- Just below minimum (invalid)
+- Just above maximum (invalid)
+- Nominal/typical value (valid)
 
-```bash
-docker compose up mysql
-```
+---
 
-or
+### Tool 4: `equivalence_class_generator`
+Generates equivalence class test cases for valid and invalid input partitions.
 
-```bash
-docker compose up postgres
-```
+| Field | Details |
+|-------|---------|
+| **Input** | `method_name: str`, `param_name: str`, `valid_values: list`, `invalid_values: list`, `param_description: str` |
+| **Output** | `dict` with test cases per partition and a JUnit template |
+| **Usage** | `equivalence_class_generator("getPet", "name", ["Buddy", "Max"], ["", null, "VeryLongName..."])` |
 
-## Test Applications
+---
 
-At development time we recommend you use the test applications set up as `main()` methods in `PetClinicIntegrationTests` (using the default H2 database and also adding Spring Boot Devtools), `MySqlTestApplication` and `PostgresIntegrationTests`. These are set up so that you can run the apps in your IDE to get fast feedback and also run the same classes as integration tests against the respective database. The MySql integration tests use Testcontainers to start the database in a Docker container, and the Postgres tests use Docker Compose to do the same thing.
-
-## Compiling the CSS
-
-There is a `petclinic.css` in `src/main/resources/static/resources/css`. It was generated from the `petclinic.scss` source, combined with the [Bootstrap](https://getbootstrap.com/) library. If you make changes to the `scss`, or upgrade Bootstrap, you will need to re-compile the CSS resources using the Maven profile "css", i.e. `./mvnw package -P css`. There is no build profile for Gradle to compile the CSS.
-
-## Working with Petclinic in your IDE
+## Installation & Configuration Guide
 
 ### Prerequisites
 
-The following items should be installed in your system:
+Ensure the following are installed before starting:
 
-- Java 17 or newer (full JDK, not a JRE)
-- [Git command line tool](https://help.github.com/articles/set-up-git)
-- Your preferred IDE
-  - Eclipse with the m2e plugin. Note: when m2e is available, there is a m2 icon in `Help -> About` dialog. If m2e is
-  not there, follow the installation process [here](https://www.eclipse.org/m2e/)
-  - [Spring Tools Suite](https://spring.io/tools) (STS)
-  - [IntelliJ IDEA](https://www.jetbrains.com/idea/)
-  - [VS Code](https://code.visualstudio.com)
+```bash
+node --version      # Must be 18+
+java --version      # Must be 11+
+mvn --version       # Must be 3.6+
+git --version
+python --version    # Must be 3.11+
+```
 
-### Steps
+### Step 1 — Install uv Package Manager
 
-1. On the command line run:
+**Mac/Linux:**
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
 
-    ```bash
-    git clone https://github.com/spring-projects/spring-petclinic.git
-    ```
+**Windows (PowerShell):**
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
 
-1. Inside Eclipse or STS:
+### Step 2 — Set Up the MCP Server
 
-    Open the project via `File -> Import -> Maven -> Existing Maven project`, then select the root directory of the cloned repo.
+```powershell
+mkdir se333-mcp-server
+cd se333-mcp-server
+uv init
+uv venv
+.venv\Scripts\activate        # Windows
+# source .venv/bin/activate   # Mac/Linux
+uv add "mcp[cli]" httpx fastmcp
+```
 
-    Then either build on the command line `./mvnw generate-resources` or use the Eclipse launcher (right-click on project and `Run As -> Maven install`) to generate the CSS. Run the application's main method by right-clicking on it and choosing `Run As -> Java Application`.
+### Step 3 — Configure main.py
 
-1. Inside IntelliJ IDEA:
+Create `main.py` in the `se333-mcp-server` folder with the four MCP tools: `add`, `parse_jacoco`, `boundary_value_analysis`, and `equivalence_class_generator`. Run the server with:
 
-    In the main menu, choose `File -> Open` and select the Petclinic [pom.xml](pom.xml). Click on the `Open` button.
+```powershell
+python main.py
+```
 
-    - CSS files are generated from the Maven build. You can build them on the command line `./mvnw generate-resources` or right-click on the `spring-petclinic` project then `Maven -> Generates sources and Update Folders`.
+The server will be available at: `http://127.0.0.1:8000/sse`
 
-    - A run configuration named `PetClinicApplication` should have been created for you if you're using a recent Ultimate version. Otherwise, run the application by right-clicking on the `PetClinicApplication` main class and choosing `Run 'PetClinicApplication'`.
+### Step 4 — Connect to VS Code
 
-1. Navigate to the Petclinic
+1. Press `Ctrl+Shift+P` → search **"MCP: Add Server"**
+2. Enter URL: `http://127.0.0.1:8000/sse`
+3. Name it: `se333-mcp-server`
+4. Verify the server shows **"Running | 4 tools"** in `.vscode/mcp.json`
 
-    Visit [http://localhost:8080](http://localhost:8080) in your browser.
+### Step 5 — Add GitHub MCP Server
 
-## Looking for something in particular?
+In `.vscode/mcp.json`, add:
 
-|Spring Boot Configuration | Class or Java property files  |
-|--------------------------|---|
-|The Main Class | [PetClinicApplication](https://github.com/spring-projects/spring-petclinic/blob/main/src/main/java/org/springframework/samples/petclinic/PetClinicApplication.java) |
-|Properties Files | [application.properties](https://github.com/spring-projects/spring-petclinic/blob/main/src/main/resources) |
-|Caching | [CacheConfiguration](https://github.com/spring-projects/spring-petclinic/blob/main/src/main/java/org/springframework/samples/petclinic/system/CacheConfiguration.java) |
+```json
+"github": {
+  "command": "npx",
+  "args": ["-y", "@modelcontextprotocol/server-github"],
+  "env": {
+    "GITHUB_PERSONAL_ACCESS_TOKEN": "YOUR_TOKEN_HERE"
+  }
+}
+```
 
-## Interesting Spring Petclinic branches and forks
+Generate your token at: GitHub → Settings → Developer Settings → Personal Access Tokens → Tokens (classic). Required scopes: `repo`, `workflow`, `read:org`.
 
-The Spring Petclinic "main" branch in the [spring-projects](https://github.com/spring-projects/spring-petclinic)
-GitHub org is the "canonical" implementation based on Spring Boot and Thymeleaf. There are
-[quite a few forks](https://spring-petclinic.github.io/docs/forks.html) in the GitHub org
-[spring-petclinic](https://github.com/spring-petclinic). If you are interested in using a different technology stack to implement the Pet Clinic, please join the community there.
+### Step 6 — Set Up the Client Project
 
-## Interaction with other open-source projects
+```powershell
+mkdir se333-demo
+cd se333-demo
+git clone https://github.com/spring-projects/spring-petclinic.git
+cd spring-petclinic
+mvn test jacoco:report
+```
 
-One of the best parts about working on the Spring Petclinic application is that we have the opportunity to work in direct contact with many Open Source projects. We found bugs/suggested improvements on various topics such as Spring, Spring Data, Bean Validation and even Eclipse! In many cases, they've been fixed/implemented in just a few days.
-Here is a list of them:
+### Step 7 — Create the Agent Prompt
 
-| Name | Issue |
-|------|-------|
-| Spring JDBC: simplify usage of NamedParameterJdbcTemplate | [SPR-10256](https://github.com/spring-projects/spring-framework/issues/14889) and [SPR-10257](https://github.com/spring-projects/spring-framework/issues/14890) |
-| Bean Validation / Hibernate Validator: simplify Maven dependencies and backward compatibility |[HV-790](https://hibernate.atlassian.net/browse/HV-790) and [HV-792](https://hibernate.atlassian.net/browse/HV-792) |
-| Spring Data: provide more flexibility when working with JPQL queries | [DATAJPA-292](https://github.com/spring-projects/spring-data-jpa/issues/704) |
+Create `.github/prompts/tester.prompt.md` with your agent instructions. In VS Code Chat (Agent mode), run:
 
-## Contributing
+```
+Act on the instructions in tester.prompt.md
+```
 
-The [issue tracker](https://github.com/spring-projects/spring-petclinic/issues) is the preferred channel for bug reports, feature requests and submitting pull requests.
+---
 
-For pull requests, editor preferences are available in the [editor config](.editorconfig) for easy use in common text editors. Read more and download plugins at <https://editorconfig.org>. All commits must include a __Signed-off-by__ trailer at the end of each commit message to indicate that the contributor agrees to the Developer Certificate of Origin.
-For additional details, please refer to the blog post [Hello DCO, Goodbye CLA: Simplifying Contributions to Spring](https://spring.io/blog/2025/01/06/hello-dco-goodbye-cla-simplifying-contributions-to-spring).
+## Troubleshooting & FAQ
 
-## License
+**Q: The MCP server won't start.**  
+A: Make sure your virtual environment is activated (`.venv\Scripts\activate`) before running `python main.py`. If port 8000 is in use, add `port=8001` to `mcp.run()`.
 
-The Spring PetClinic sample application is released under version 2.0 of the [Apache License](https://www.apache.org/licenses/LICENSE-2.0).
+**Q: VS Code shows the server as "Stopped".**  
+A: The PowerShell window running `python main.py` must stay open. Never close it while working. If closed, navigate back to `se333-mcp-server` and rerun the server.
+
+**Q: The agent answers math questions without calling the tool.**  
+A: Switch VS Code chat to **Agent** mode (click the `</>` icon) and explicitly say "use the add tool to calculate 1+2".
+
+**Q: `mvn test` fails with compilation errors.**  
+A: The agent may have generated tests with incorrect imports. Ask the agent to "debug and fix the failing test" and it will resolve them automatically.
+
+**Q: JaCoCo report not generated after `mvn test`.**  
+A: Run `mvn test jacoco:report` explicitly. The report requires both commands.
+
+**Q: GitHub push is rejected.**  
+A: Make sure you're on a feature branch, not main. Run `git checkout -b feature/your-branch-name` first.
+
+**Q: Merge conflicts on GitHub PR.**  
+A: Run `git fetch origin`, then `git merge origin/main -X theirs` on your feature branch, then force push.
+
+---
